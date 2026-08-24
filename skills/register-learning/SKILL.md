@@ -13,7 +13,7 @@ argument-hint: 'Required: the topic file (e.g. JS, Java, PostgreSQL) and the kno
 ## Topic Resolution
 The user provides a topic name (e.g. "JS", "Java", "PostgreSQL", "Lit", "CSS", "Docker"). Map it to a file:
 
-- **Base path**: The `learning/` directory that is **two levels up** from this skill file (i.e. the parent of `skills/register-learning/`). Resolve it dynamically — do not hardcode an absolute path.
+- **Base path**: Run `readlink` (or equivalent) on this skill file's path to resolve the symlink to its real location, then go two directories up. Concretely: `realpath "$(dirname SKILL.md)/../.."`. For example, if the symlink resolves to `/Users/me/Projects/PERS/learning/skills/register-learning/SKILL.md`, the base path is `/Users/me/Projects/PERS/learning/`. **The base path must contain a `skills/` subfolder — if it doesn't, you resolved it wrong. Never write files inside `~/.copilot/`.**
 - **Convention**: `{topic-lowercase}/{Topic}_Learning.md`
   - "JS" or "JavaScript" → `javascript/JS_Learning.md`
   - "Java" → `java/Java_Learning.md`
@@ -55,7 +55,7 @@ Each entry follows this exact shape (no dates, per user preference):
 ```markdown
 ### N. <Short, descriptive title>
 
-<Explanation as 2-4 concise bullet points or a short paragraph. State the rule, when to use each option, and the concrete consequence of getting it wrong.>
+<Explanation written in a clear, teacher-like tone — as if you're explaining the concept to a colleague who is smart but unfamiliar with this specific topic. Use complete sentences and short paragraphs (2-4 sentences each). Explain *why* something works a certain way, not just *what* it does. When comparing options, explain each one in its own sentence so the reader can follow the reasoning.>
 
 \`\`\`<language>
 // Small, self-contained, generic example illustrating the rule (when relevant)
@@ -63,7 +63,9 @@ Each entry follows this exact shape (no dates, per user preference):
 ```
 
 - `N` is the next sequential number (continue numbering across the whole document, even across chapters).
-- Keep explanations short — bullet points over prose, no multi-paragraph essays.
+- **Write like a teacher, not a telegram.** Use complete sentences — but mix formats freely to make the content scannable and memorable: short paragraphs for context, bullet points for listing options, tables for comparisons, "Do / Don't" pairs for common mistakes, and well-commented code examples to tie it all together.
+- The **commented code example is often the most valuable part** — invest effort in making comments clear and illustrative. A reader should be able to understand the rule just by reading the code + comments.
+- Keep it concise but readable — aim for clarity over brevity or verbosity. Use whatever structure makes the concept easiest to grasp at a glance.
 - Include a code/config example **only when it adds clarity** — purely conceptual tips can omit it.
 - Use the appropriate language tag for the fenced code block (`js`, `java`, `sql`, `html`, `css`, `yaml`, etc.).
 
