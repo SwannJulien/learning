@@ -63,6 +63,8 @@ Each entry follows this exact shape (no dates, per user preference):
 \`\`\`<language>
 // Small, self-contained, generic example illustrating the rule (when relevant)
 \`\`\`
+
+**Further reading:** [Descriptive resource title](https://example.com)
 ```
 
 - `N` is the next sequential number (continue numbering across the whole document, even across chapters).
@@ -71,6 +73,7 @@ Each entry follows this exact shape (no dates, per user preference):
 - Keep it concise but readable — aim for clarity over brevity or verbosity. Use whatever structure makes the concept easiest to grasp at a glance.
 - Include a code/config example **only when it adds clarity** — purely conceptual tips can omit it.
 - Use the appropriate language tag for the fenced code block (`js`, `java`, `sql`, `html`, `css`, `yaml`, etc.).
+- Every entry must include a **Further reading** link to a web page or document that explains the learning in greater depth. Prefer official documentation, specifications, or other authoritative sources, and use a descriptive link title.
 
 ### 5. Decide where it goes: flat log vs. chapters
 
