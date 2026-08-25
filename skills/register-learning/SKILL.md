@@ -2,6 +2,7 @@
 name: register-learning
 description: 'Log a knowledge entry (rule of thumb, best practice, lesson learned) into a topic-specific learning file. Use when: register learning, keep this knowledge, log this in {topic}, add learning tip, register-learning.'
 argument-hint: 'Required: the topic file (e.g. JS, Java, PostgreSQL) and the knowledge to log'
+model: gemini-3.5-flash
 ---
 
 # Register Learning
