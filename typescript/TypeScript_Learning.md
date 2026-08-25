@@ -50,6 +50,8 @@ function greetWithOptionalAge(name: string, age?: number) {
 handleRequest("Alice", greetWithOptionalAge); // ✅ compiles - optional param is fine
 ```
 
+**Further reading:** [TypeScript Handbook: Type Compatibility](https://www.typescriptlang.org/docs/handbook/type-compatibility.html)
+
 ### 2. `import type` and type-file naming conventions
 
 Use `import type { X, Y } from "./module"` when you only need `X`/`Y` for type-checking, not at runtime. Unlike a regular `import`, an `import type` is completely erased during compilation — no JS import statement survives in the output. This matters for several reasons: it guarantees no unnecessary runtime module loading or side effects just to grab a type; it plays well with transpilers that process files in isolation (Babel, esbuild, swc, or the `isolatedModules` TS flag) since those tools can't always tell a type-only import from a value import without full program analysis — `import type` removes the ambiguity explicitly; and it can prevent circular-import breakage, since a type-only reference never actually executes at runtime. You can also mix the two in one import when a module exports both types and values: `import { type User, someFunction } from "./models";`.
@@ -86,3 +88,5 @@ function printUser(user: User): void {
     console.log(user.name);
 }
 ```
+
+**Further reading:** [TypeScript Handbook: Modules - Import Type](https://www.typescriptlang.org/docs/handbook/2/modules.html#importing-types)

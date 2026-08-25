@@ -38,3 +38,5 @@ class ChatState {
   }
 }
 ```
+
+**Further reading:** [MDN Web Docs: null](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/null)
