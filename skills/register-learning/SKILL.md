@@ -50,6 +50,8 @@ Compare the new tip against existing entry titles and content. If a very similar
 ### 3. Generalize the content
 The source may come from a specific project/codebase. Strip out project-specific names, business logic, and file paths — rewrite the explanation and code example so they read as generic guidance that would make sense in any project using that technology.
 
+Code examples must be client- and organization-agnostic. Never copy proprietary identifiers, domain names, internal URLs, credentials, configuration values, or business-specific models; replace them with neutral names and self-contained placeholders that illustrate the same principle.
+
 ### 4. Compose the entry
 Each entry follows this exact shape (no dates, per user preference):
 
