@@ -7,6 +7,7 @@ Entries are logged chronologically (oldest first). This log will be reorganized 
 ## Index
 
 - [1. Public vs private vs constructor-only properties](#1-public-vs-private-vs-constructor-only-properties)
+- [2. Property reflection (reflect: true)](#2-property-reflection-reflect-true)
 
 ## Entries
 
@@ -62,3 +63,65 @@ class UserCard extends LitElement {
   }
 }
 ```
+
+**Further reading:** [Lit documentation: Define reactive properties](https://lit.dev/docs/components/properties/#defining-properties)
+
+### 2. Property reflection (reflect: true)
+
+In Lit, property changes normally trigger a component re-render, but they do not automatically update the corresponding HTML attribute in the DOM. Setting `reflect: true` instructs Lit to automatically serialize and write the property's value back to the element's DOM attribute whenever it changes. This creates a two-way synchronization between the JavaScript property and the HTML attribute.
+
+Reflecting properties is highly useful, but it comes with performance overhead because Lit must convert the value to a string and execute a DOM write. Therefore, reflection should be used selectively.
+
+#### When to Use Reflection
+- **CSS Styling based on Host State**: When you need to style the component's host element using attribute selectors like `:host([disabled])` or `:host([state="inactive"])`.
+- **Accessibility and Semantics**: When syncing properties with standard ARIA attributes (e.g., `aria-expanded`) or standard semantic attributes (e.g., `disabled`, `open`).
+- **External Interoperability**: When other testing frameworks, analytical tools, or non-reactive legacy scripts need to inspect the current state of your element directly from the DOM using `element.getAttribute('state')` or query selectors.
+
+#### When NOT to Use Reflection
+- **Objects and Arrays**: Serializing large objects or arrays back to attributes is extremely slow and results in bloated HTML.
+- **Internal State**: If a state change only affects internal templates rendered inside `shadowRoot`, keeping it in JS-only memory is much faster.
+
+```js
+import { LitElement, html, css } from 'lit';
+
+class AccordionItem extends LitElement {
+  static get properties() {
+    return {
+      // Reflect 'open' to attribute so we can apply styles to the host element
+      open: { type: Boolean, reflect: true },
+      // Reflect 'title' is unnecessary because it is only used to render content
+      title: { type: String },
+    };
+  }
+
+  static get styles() {
+    return css`
+      /* style the host element when 'open' attribute is present */
+      :host([open]) {
+        border-color: blue;
+      }
+    `;
+  }
+
+  constructor() {
+    super();
+    this.open = false;
+    this.title = '';
+  }
+
+  toggle() {
+    this.open = !this.open;
+  }
+
+  render() {
+    return html`
+      <div class="header" @click=${this.toggle}>${this.title}</div>
+      <div class="content">Content...</div>
+    `;
+  }
+}
+
+customElements.define('accordion-item', AccordionItem);
+```
+
+**Further reading:** [Lit documentation: Property Reflection](https://lit.dev/docs/components/properties/#reflection)
