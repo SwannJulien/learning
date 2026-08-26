@@ -8,6 +8,7 @@ Entries are logged chronologically (oldest first). This log will be reorganized 
 
 1. [Empty string vs `null` for initial values](#1-empty-string-vs-null-for-initial-values)
 2. [Dynamic object properties with bracket notation](#2-dynamic-object-properties-with-bracket-notation)
+3. [Truthy and falsy values](#3-truthy-and-falsy-values)
 
 ## Entries
 
@@ -62,3 +63,33 @@ fruits[selectedFruit] || 'unknown fruit'; // Safe fallback if the key is missing
 ```
 
 **Further reading:** [MDN Web Docs: Property accessors](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors)
+
+### 3. Truthy and falsy values
+
+JavaScript evaluates every value as either truthy or falsy when it is used in a boolean context, such as an `if` condition or with the logical NOT operator (`!`). The complete set of falsy values is `false`, `0`, `-0`, `0n`, `NaN`, `''`, `null`, and `undefined`; all other ordinary JavaScript values are truthy, including empty arrays (`[]`) and empty objects (`{}`).
+
+The `!` operator first converts a value to a boolean and then reverses it. Therefore, `!value` is `true` for any falsy value and `false` for any truthy value. For example, `!country` is `true` when `country` is `undefined` or an empty string, so it can disable a button until a non-empty country value is selected.
+
+```js
+const falsyValues = [false, 0, -0, 0n, NaN, '', null, undefined];
+
+falsyValues.forEach(value => {
+  Boolean(value); // false
+  !value;         // true
+});
+
+Boolean('Spain'); // true: every non-empty string is truthy
+Boolean([]);      // true: an empty array is still an object
+Boolean({});      // true: an empty object is still an object
+
+let country;
+!country; // true because country is undefined
+
+country = '';
+!country; // true because country is an empty string
+
+country = 'Spain';
+!country; // false because country is a non-empty string
+```
+
+**Further reading:** [MDN Web Docs: Falsy](https://developer.mozilla.org/en-US/docs/Glossary/Falsy) and [MDN Web Docs: Truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy)
