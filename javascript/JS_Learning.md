@@ -7,6 +7,7 @@ Entries are logged chronologically (oldest first). This log will be reorganized 
 ## Index
 
 1. [Empty string vs `null` for initial values](#1-empty-string-vs-null-for-initial-values)
+2. [Dynamic object properties with bracket notation](#2-dynamic-object-properties-with-bracket-notation)
 
 ## Entries
 
@@ -40,3 +41,24 @@ class ChatState {
 ```
 
 **Further reading:** [MDN Web Docs: null](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/null)
+
+### 2. Dynamic object properties with bracket notation
+
+Bracket notation, `object[expression]`, evaluates the expression inside the brackets and uses its result as the property key. This makes it useful for lookup tables when the property to read comes from a variable; `itemsByType[type]` is equivalent to `itemsByType['client']` when `type` contains `'client'`.
+
+Dot notation such as `itemsByType.type` searches for a literal property named `type`, so it is not interchangeable with bracket notation. A fallback such as `|| []` can provide a safe default when the computed key does not exist in the object.
+
+```js
+const fruits = {
+  apple: 'winter fruit',
+  banana: 'summer fruit'
+};
+
+const selectedFruit = 'apple';
+
+fruits[selectedFruit]; // 'winter fruit'
+fruits.apple; // 'winter fruit'
+fruits[selectedFruit] || 'unknown fruit'; // Safe fallback if the key is missing
+```
+
+**Further reading:** [MDN Web Docs: Property accessors](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors)
