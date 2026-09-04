@@ -9,6 +9,8 @@ Entries are logged chronologically (oldest first). This log will be reorganized 
 1. [Empty string vs `null` for initial values](#1-empty-string-vs-null-for-initial-values)
 2. [Dynamic object properties with bracket notation](#2-dynamic-object-properties-with-bracket-notation)
 3. [Truthy and falsy values](#3-truthy-and-falsy-values)
+4. [Download generated content with a Blob and temporary link](#4-download-generated-content-with-a-blob-and-temporary-link)
+5. [Cancelling asynchronous tasks with AbortController and AbortSignal](#5-cancelling-asynchronous-tasks-with-abortcontroller-and-abortsignal)
 
 ## Entries
 
@@ -93,3 +95,173 @@ country = 'Spain';
 ```
 
 **Further reading:** [MDN Web Docs: Falsy](https://developer.mozilla.org/en-US/docs/Glossary/Falsy) and [MDN Web Docs: Truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy)
+
+### 4. Download generated content with a Blob and temporary link
+
+When a browser application needs to download content that was generated in JavaScript, it can create a `Blob`. A `Blob` is a file-like object that stores raw data plus a MIME type, such as `text/csv;charset=utf-8` for a CSV file.
+
+The browser cannot download a `Blob` directly from memory, so the code creates a temporary object URL with `URL.createObjectURL(blob)`. That URL points to the in-memory data, and a temporary `<a>` element with a `download` attribute tells the browser to save it as a file instead of navigating to it.
+
+After triggering the click, revoke the object URL with `URL.revokeObjectURL(url)`. Revoking releases the memory associated with the generated URL, which matters when users download large files or repeat the action many times.
+
+```js
+function downloadCsvTemplate() {
+  const headers = ['name', 'email', 'country'];
+  const csvContent = `${headers.join(',')}\r\n`;
+
+  // The Blob stores the generated file content and identifies it as CSV text.
+  const file = new Blob([csvContent], {
+    type: 'text/csv;charset=utf-8'
+  });
+
+  // Object URLs let DOM APIs reference file-like data created in memory.
+  const url = URL.createObjectURL(file);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = 'template.csv';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  // Revoke after the click so the browser has time to start the download.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+```
+
+```mermaid
+flowchart LR
+  A[Generated text] --> B[Blob]
+  B --> C[Object URL]
+  C --> D[Temporary anchor]
+  D --> E[Browser download]
+  C --> F[Revoke URL]
+```
+
+Read this flow from left to right: JavaScript turns generated content into a file-like `Blob`, exposes it through a temporary URL, uses an anchor click to start the download, and then revokes the URL to clean up memory.
+
+**Further reading:** [MDN Web Docs: Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) and [MDN Web Docs: URL.createObjectURL()](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static)
+
+### 5. Cancelling asynchronous tasks with AbortController and AbortSignal
+
+Asynchronous operations, such as fetching data from a network server with `fetch()`, take unpredictable time to complete. In web applications, situations frequently arise where an active network request is no longer needed:
+
+- A user navigates away from a page or closes a component while data is still downloading.
+- A user types rapidly into a search field, triggering a new search request before the previous search response arrives.
+- A component is unmounted or destroyed during cleanup.
+
+Without a way to cancel pending requests, late-arriving responses can cause race conditions (where an older request overwrites newer data), waste network bandwidth, or cause errors by updating state on a component that no longer exists.
+
+The `AbortController` API provides a standard mechanism to cancel asynchronous tasks on demand. It consists of two complementary objects:
+
+- **`AbortController`**: The controller object that triggers cancellation when its `controller.abort()` method is called.
+- **`AbortSignal`**: The signal object accessed via `controller.signal`. This signal is passed as an option to abortable operations (such as `fetch(url, { signal })`) so the operation knows when to cancel.
+
+When `controller.abort()` is called, any active `fetch` request attached to that signal is cancelled immediately. The `fetch` Promise rejects with a DOMException whose `name` property is `'AbortError'`. Catching this specific error name allows code to handle intentional cancellations cleanly without logging them as unexpected failures.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant App as Application / Component
+  participant Controller as AbortController
+  participant Request as fetch() Request
+  App->>Controller: new AbortController()
+  App->>Request: fetch(url, { signal: controller.signal })
+  Note over Request: Request in flight...
+  App->>Controller: controller.abort()
+  Controller-->>Request: Signal aborted
+  Request--xApp: Rejects with AbortError
+```
+
+Read this sequence from top to bottom: The application instantiates an `AbortController`, passes its `signal` to a `fetch` request, and later calls `controller.abort()`. The controller notifies the request via the signal, causing `fetch` to cancel immediately and reject its Promise with an `AbortError`.
+
+```js
+class UserProfileLoader {
+  constructor() {
+    this.controller = null;
+  }
+
+  async loadUserData(userId) {
+    // 1. Cancel any previous request still in flight
+    if (this.controller) {
+      this.controller.abort();
+    }
+
+    // 2. Create a fresh controller for the new request
+    this.controller = new AbortController();
+
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        signal: this.controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server status ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      // 3. Ignore AbortError since it was triggered intentionally
+      if (error.name === 'AbortError') {
+        console.log('Request was cancelled intentionally');
+      } else {
+        console.error('Failed to load user data:', error);
+      }
+      return null;
+    } finally {
+      this.controller = null;
+    }
+  }
+
+  // 4. Clean up pending network requests when tearing down
+  cleanup() {
+    if (this.controller) {
+      this.controller.abort();
+      this.controller = null;
+    }
+  }
+}
+```
+
+#### Selective Line-by-Line Walkthrough
+
+```js
+this.controller = new AbortController();
+```
+
+Creates a new instance of `AbortController`. This controller owns a unique `signal` property and an `abort()` method used to trigger cancellation.
+
+---
+
+```js
+const response = await fetch(`/api/users/${userId}`, {
+  signal: this.controller.signal,
+});
+```
+
+Passes `this.controller.signal` to `fetch` options. The browser links the network request to this signal. If the signal aborts while the request is still pending, `fetch` aborts the HTTP request immediately.
+
+---
+
+```js
+if (error.name === 'AbortError') {
+  console.log('Request was cancelled intentionally');
+}
+```
+
+Differentiates an intentional cancellation from genuine network or server errors. When `abort()` is invoked, the `fetch` Promise rejects with a DOMException named `'AbortError'`. Checking `error.name` allows applications to silence or log cancellation safely.
+
+---
+
+```js
+cleanup() {
+  if (this.controller) {
+    this.controller.abort();
+    this.controller = null;
+  }
+}
+```
+
+Teardown method to ensure no network requests remain running when a component is destroyed or unmounted. Calling `abort()` cleans up resources and prevents post-unmount state updates.
+
+**Further reading:** [MDN Web Docs: AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) and [MDN Web Docs: AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
