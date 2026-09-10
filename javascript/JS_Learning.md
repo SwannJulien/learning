@@ -11,6 +11,7 @@ Entries are logged chronologically (oldest first). This log will be reorganized 
 3. [Truthy and falsy values](#3-truthy-and-falsy-values)
 4. [Download generated content with a Blob and temporary link](#4-download-generated-content-with-a-blob-and-temporary-link)
 5. [Cancelling asynchronous tasks with AbortController and AbortSignal](#5-cancelling-asynchronous-tasks-with-abortcontroller-and-abortsignal)
+6. [Use `link:` for live local pnpm dependency development](#6-use-link-for-live-local-pnpm-dependency-development)
 
 ## Entries
 
@@ -265,3 +266,35 @@ cleanup() {
 Teardown method to ensure no network requests remain running when a component is destroyed or unmounted. Calling `abort()` cleans up resources and prevents post-unmount state updates.
 
 **Further reading:** [MDN Web Docs: AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) and [MDN Web Docs: AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
+
+### 6. Use `link:` for live local pnpm dependency development
+
+When a JavaScript project uses pnpm, a dependency declared with `file:/absolute/path/to/package` is best understood as a local package snapshot. pnpm installs that package into the consuming project, but later edits in the source package are not guaranteed to appear after a plain `pnpm install` because the dependency specification did not change.
+
+Use `link:/absolute/path/to/package` when the consuming app should read directly from a local package while both projects are being edited. Use `workspace:*` when both packages are part of the same pnpm workspace, because that lets pnpm resolve the dependency through the workspace instead of treating it as an external package.
+
+Development servers can add a second layer of caching. For example, Vite prebundles dependencies into `node_modules/.vite`; after changing a linked local dependency, clear that cache and restart the dev server if the browser still runs stale code.
+
+| Dependency spec | Best use case | Update behavior |
+| --- | --- | --- |
+| `file:/path/to/package` | Installing a local package snapshot | May require reinstalling with `--force` to refresh changes |
+| `link:/path/to/package` | Live local development across two folders | Reads from the linked local folder |
+| `workspace:*` | Packages inside the same pnpm workspace | Resolves through the workspace |
+
+```json
+{
+  "dependencies": {
+    "my-local-package": "link:/Users/me/projects/my-local-package"
+  }
+}
+```
+
+```bash
+# After switching from file: to link:, reinstall dependencies.
+pnpm install
+
+# If the app uses Vite and stale dependency code still appears, clear the prebundle cache.
+rm -rf node_modules/.vite
+```
+
+**Further reading:** [pnpm: Working with linked packages](https://pnpm.io/cli/link) and [Vite: Dependency pre-bundling](https://vite.dev/guide/dep-pre-bundling)
